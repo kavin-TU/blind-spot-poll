@@ -1,4 +1,4 @@
-import { GENERATIONS, QUESTIONS, normalizePhone, type Generation, type Participant } from "../src/questions.ts";
+import { QUESTIONS, normalizePhone, type Participant } from "../src/questions.ts";
 
 // Where participant records live. One JSON record per participant, keyed
 // "p/<id>". A phone only ever writes its own record, so simultaneous
@@ -51,17 +51,14 @@ export function createHandler(store: Store, hostPin: () => string | undefined) {
       const name = clean(body.name, 60);
       const phone = normalizePhone(body.phone);
       const occupation = clean(body.occupation, 60);
-      const generation = body.generation as Generation;
       if (!name) return fail(400, "Please enter your name.");
       if (!phone) return fail(400, "Please enter a valid phone number.");
-      if (!GENERATIONS.includes(generation)) return fail(400, "Please choose your generation.");
       if (!occupation) return fail(400, "Please enter your occupation.");
 
       const p: Participant = {
         id: `P-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`,
         name,
         phone,
-        generation,
         occupation,
         joinedAt: new Date().toISOString(),
         answers: {},
@@ -82,7 +79,7 @@ export function createHandler(store: Store, hostPin: () => string | undefined) {
       if (!validId(body.id)) return fail(404, "Not registered.");
       const question = QUESTIONS.find((q) => q.id === body.questionId);
       if (!question) return fail(400, "Unknown question.");
-      if (!Number.isInteger(body.option) || body.option < 0 || body.option > 3)
+      if (!Number.isInteger(body.option) || body.option < 0 || body.option >= question.options.length)
         return fail(400, "Please choose an option.");
 
       const p = await store.get(key(body.id));

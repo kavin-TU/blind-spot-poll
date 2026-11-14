@@ -1,6 +1,6 @@
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { byGroup, formatShare, overall, share } from "../analytics";
+import { byBreakdown, formatShare, overall, share } from "../analytics";
 import { api, ApiError } from "../api";
 import {
   CornerBlocks,
@@ -8,6 +8,7 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconChart,
+  IconCheck,
   IconDownload,
   IconEyeOff,
   IconFlag,
@@ -16,12 +17,15 @@ import {
   TwoSides,
 } from "../art";
 import {
-  GENERATIONS,
-  GENERATION_SHORT,
-  GENERATION_YEARS,
+  BREAKDOWNS,
+  CLOSING,
+  COVER,
   LETTERS,
   OPTION_COLORS,
   QUESTIONS,
+  kickerOf,
+  questionById,
+  type Breakdown,
   type Participant,
   type Question,
 } from "../questions";
@@ -30,10 +34,19 @@ const PIN_KEY = "blind-spot-host-pin";
 const VIEW_KEY = "blind-spot-host-view";
 const LAST = QUESTIONS.length + 1; // 0 = welcome, 1..N = questions, N+1 = closing
 
+interface View {
+  slide: number;
+  revealed: string[];
+  breakdown: Breakdown["key"];
+}
+
 const load = <T,>(storage: Storage, key: string, fallback: T): T => {
   try {
     const v = storage.getItem(key);
-    return v ? (JSON.parse(v) as T) : fallback;
+    if (!v) return fallback;
+    const parsed = JSON.parse(v) as T;
+    // Objects merge with the defaults so a saved view from an older version still works.
+    return typeof fallback === "object" && fallback !== null ? { ...fallback, ...parsed } : parsed;
   } catch {
     return fallback;
   }
@@ -50,9 +63,9 @@ export default function Instructor() {
   const [pin, setPin] = useState(() => load<string>(localStorage, PIN_KEY, ""));
   const [people, setPeople] = useState<Participant[] | null>(null);
   const [error, setError] = useState("");
-  // Slide position and which results are revealed survive a refresh.
-  const [view, setView] = useState(() =>
-    load<{ slide: number; revealed: string[] }>(sessionStorage, VIEW_KEY, { slide: 0, revealed: [] }),
+  // Slide position, revealed results and the chosen breakdown survive a refresh.
+  const [view, setView] = useState<View>(() =>
+    load<View>(sessionStorage, VIEW_KEY, { slide: 0, revealed: [], breakdown: "generation" }),
   );
   useEffect(() => {
     save(sessionStorage, VIEW_KEY, view);
@@ -97,17 +110,22 @@ export default function Instructor() {
         : [...v.revealed, question.id],
     }));
   }, [question, refresh]);
+  const setBreakdown = useCallback((key: Breakdown["key"]) => setView((v) => ({ ...v, breakdown: key })), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === "INPUT") return;
+      const k = e.key.toLowerCase();
       if (e.key === "ArrowRight" || e.key === "PageDown") go(1);
       else if (e.key === "ArrowLeft" || e.key === "PageUp") go(-1);
-      else if (e.key.toLowerCase() === "r") toggle();
+      else if (k === "r") toggle();
+      else if (k === "g") setBreakdown("generation");
+      else if (k === "o") setBreakdown("role");
+      else if (k === "i") setBreakdown("identity");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, toggle]);
+  }, [go, toggle, setBreakdown]);
 
   if (!pin || people === null)
     return (
@@ -124,15 +142,23 @@ export default function Instructor() {
 
   const finished = people.filter((p) => QUESTIONS.every((q) => p.answers[q.id])).length;
   const light = !!question && view.slide % 2 === 1;
+  const breakdown = BREAKDOWNS.find((b) => b.key === view.breakdown) ?? BREAKDOWNS[0];
+  const showSwitch = !!question && revealed && !question.demographic;
 
   return (
     <div className={`stage ${light ? "light" : ""}`}>
       {view.slide === 0 ? (
         <Welcome joined={people.length} finished={finished} />
       ) : question ? (
-        <QuestionSlide q={question} number={view.slide} people={people} revealed={revealed} />
+        <QuestionSlide q={question} number={view.slide} people={people} revealed={revealed} breakdown={breakdown} />
       ) : (
-        <Closing people={people} finished={finished} pin={pin} onReset={() => setView({ slide: 0, revealed: [] })} refresh={refresh} />
+        <Closing
+          people={people}
+          finished={finished}
+          pin={pin}
+          onReset={() => setView((v) => ({ ...v, slide: 0, revealed: [] }))}
+          refresh={refresh}
+        />
       )}
 
       <div className="bar">
@@ -156,10 +182,26 @@ export default function Instructor() {
             <IconArrowRight />
           </button>
         </div>
+        {showSwitch && (
+          <div className="controls seg" role="radiogroup" aria-label="Break results down by">
+            <span className="seg-label">By</span>
+            {BREAKDOWNS.map((b) => (
+              <button
+                key={b.key}
+                role="radio"
+                aria-checked={b.key === breakdown.key}
+                className={`btn ${b.key === breakdown.key ? "on" : ""}`}
+                onClick={() => setBreakdown(b.key)}
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+        )}
         <span className="count" role="status">
           {error ? <span className="warn">Connection problem — showing last known data. </span> : null}
           {question
-            ? `${overall(people, question.id).total} answered · ${people.length} joined`
+            ? `${overall(people, question).total} answered · ${people.length} joined`
             : `${people.length} joined · ${finished} finished`}
         </span>
         <span style={{ flex: 1 }} />
@@ -225,11 +267,11 @@ function Welcome({ joined, finished }: { joined: number; finished: number }) {
           <br />
           BLIND SPOT
         </h1>
-        <p style={{ fontSize: "1.9em", fontWeight: 700, color: "#009C96", margin: "0.6em 0 0" }}>
-          What's working that nobody's borrowed?
-        </p>
-        <p className="hint" style={{ maxWidth: "22em" }}>
-          Scan the code, tell us your generation, and answer {QUESTIONS.length} quick questions on your phone.
+        <p style={{ fontSize: "1.9em", fontWeight: 700, color: "#009C96", margin: "0.6em 0 0" }}>{COVER.tagline}</p>
+        <p className="hint" style={{ maxWidth: "24em" }}>
+          {QUESTIONS.length} questions. {COVER.sub}
+          <br />
+          Scan the code and vote on your phone.
         </p>
         <div style={{ display: "flex", gap: "1em", marginTop: "2em" }}>
           <div className="stat-tile">
@@ -279,14 +321,19 @@ function QuestionSlide({
   number,
   people,
   revealed,
+  breakdown,
 }: {
   q: Question;
   number: number;
   people: Participant[];
   revealed: boolean;
+  breakdown: Breakdown;
 }) {
-  const all = useMemo(() => overall(people, q.id), [people, q.id]);
-  const gens = useMemo(() => byGroup(people, q.id, (p) => p.generation, GENERATIONS), [people, q.id]);
+  const all = useMemo(() => overall(people, q), [people, q]);
+  const groups = useMemo(() => byBreakdown(people, q, breakdown), [people, q, breakdown]);
+  const groupQuestion = questionById(breakdown.qid)!;
+  const many = q.options.length > 4;
+  const top = Math.max(...all.counts);
 
   return (
     <div className="slide">
@@ -294,18 +341,18 @@ function QuestionSlide({
         <DotGrid className="art" style={{ right: "1.6em", bottom: "0.6em", width: "8em", color: "var(--accent)", opacity: 0.22 }} />
       )}
       <div style={{ display: "flex", justifyContent: "space-between", position: "relative" }}>
-        <span className="kicker">{q.kicker}</span>
+        <span className="kicker">{kickerOf(q)}</span>
         <span style={{ fontWeight: 700, opacity: 0.7 }}>
           {String(number).padStart(2, "0")} / {String(QUESTIONS.length).padStart(2, "0")}
         </span>
       </div>
-      <h1 className="headline" style={revealed ? { fontSize: "2.1em", maxWidth: "none" } : undefined}>
+      <h1 className="headline" style={revealed ? { fontSize: many ? "1.9em" : "2.1em", maxWidth: "none" } : undefined}>
         {q.title}
       </h1>
       {!revealed && <p className="hint">{q.hint}</p>}
 
       {!revealed ? (
-        <div className="options">
+        <div className={`options ${many ? "many" : ""}`}>
           {q.options.map((o, i) => (
             <div className="option fade-up" key={i} style={{ ["--opt" as string]: OPTION_COLORS[i], animationDelay: `${i * 60}ms` }}>
               <span className="badge" style={{ background: OPTION_COLORS[i] }}>
@@ -322,36 +369,83 @@ function QuestionSlide({
         <div className="options" style={{ gridTemplateColumns: "1fr", justifyItems: "center" }}>
           <p className="hint">No answers yet. Results appear here as people submit.</p>
         </div>
+      ) : q.demographic ? (
+        <div className={`results overall-only ${many ? "dense" : ""}`}>
+          <div className="th" style={{ textAlign: "left" }}>
+            {q.hint}
+          </div>
+          <div className="th">
+            Share of the room<small>{all.total} answers</small>
+          </div>
+          {q.options.map((o, i) => {
+            const s = share(all.counts[i], all.total);
+            return (
+              <Row key={i}>
+                <div className="row-main">
+                  <span className="badge" style={{ background: OPTION_COLORS[i] }}>
+                    {LETTERS[i]}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="row-title">
+                      {o.title}
+                      {o.sub && <span className="row-sub">{o.sub}</span>}
+                      {all.counts[i] === top && top > 0 && <span className="tag">Largest group</span>}
+                    </div>
+                    <div className="track">
+                      <div style={{ width: `${(s ?? 0) * 100}%`, background: OPTION_COLORS[i] }} />
+                    </div>
+                  </div>
+                </div>
+                <div className="big">
+                  {formatShare(s)}
+                  <small>
+                    {all.counts[i]} of {all.total}
+                  </small>
+                </div>
+              </Row>
+            );
+          })}
+        </div>
       ) : (
         <>
-          <div className="results">
+          <div
+            className={`results ${many ? "dense" : ""}`}
+            style={{
+              gridTemplateColumns: `minmax(0, ${groupQuestion.options.length > 5 ? 2 : 2.5}fr) 0.8fr repeat(${groupQuestion.options.length}, minmax(0, 0.72fr))`,
+            }}
+          >
             <div className="th" style={{ textAlign: "left" }}>
-              {q.hint}
+              {q.correct !== undefined ? "Correct answer marked in gold" : q.hint}
             </div>
             <div className="th">
               Overall<small>&nbsp;</small>
               <small>{all.total} answers</small>
             </div>
-            {GENERATIONS.map((g) => (
-              <div className="th" key={g}>
-                {GENERATION_SHORT[g]}
-                <small>{GENERATION_YEARS[g] || "\u00A0"}</small>
-                <small>{gens.get(g)!.total} answers</small>
+            {groupQuestion.options.map((g, gi) => (
+              <div className="th" key={g.title} title={g.title}>
+                {breakdown.short[gi] ?? g.title}
+                <small>{g.sub?.replace(/^Born /, "") || " "}</small>
+                <small>{groups.get(g.title)!.total} answers</small>
               </div>
             ))}
             {q.options.map((o, i) => {
               const s = share(all.counts[i], all.total);
-              const top = all.counts[i] === Math.max(...all.counts);
+              const correct = q.correct === i;
               return (
                 <Row key={i}>
-                  <div className="row-main">
+                  <div className={`row-main ${correct ? "correct" : ""}`}>
                     <span className="badge" style={{ background: OPTION_COLORS[i] }}>
                       {LETTERS[i]}
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="row-title">
                         {o.title}
-                        {top && <span className="tag">Top choice</span>}
+                        {correct && (
+                          <span className="tag gold">
+                            <IconCheck /> Correct
+                          </span>
+                        )}
+                        {all.counts[i] === top && top > 0 && <span className="tag">Top choice</span>}
                       </div>
                       <div className="track">
                         <div style={{ width: `${(s ?? 0) * 100}%`, background: OPTION_COLORS[i] }} />
@@ -360,19 +454,26 @@ function QuestionSlide({
                   </div>
                   <div className="big">
                     {formatShare(s)}
-                    <small>{all.counts[i]} of {all.total}</small>
+                    <small>
+                      {all.counts[i]} of {all.total}
+                    </small>
                   </div>
-                  {GENERATIONS.map((g) => {
-                    const t = gens.get(g)!;
+                  {groupQuestion.options.map((g) => {
+                    const t = groups.get(g.title)!;
                     const gs = share(t.counts[i], t.total);
                     return gs === null ? (
-                      <div className="cell na" key={g}>
+                      <div className="cell na" key={g.title}>
                         N/A
                       </div>
                     ) : (
-                      <div className="cell" key={g} title={`${t.counts[i]} of ${t.total} ${g}`}>
+                      <div className="cell" key={g.title} title={`${t.counts[i]} of ${t.total} ${g.title}`}>
                         <i style={{ height: `${gs * 100}%`, background: OPTION_COLORS[i] }} />
-                        <span>{formatShare(gs)}</span>
+                        <span>
+                          {formatShare(gs)}
+                          <small>
+                            {t.counts[i]} of {t.total}
+                          </small>
+                        </span>
                       </div>
                     );
                   })}
@@ -380,7 +481,20 @@ function QuestionSlide({
               );
             })}
           </div>
-          <div className="quote">“{q.quote}”</div>
+          {q.reveal && (
+            <div className="reveal">
+              <div className="reveal-stat">{q.reveal.stat}</div>
+              <div className="reveal-text">
+                <div className="reveal-caption">{q.reveal.caption}</div>
+                {q.reveal.extra?.map((line) => (
+                  <div className="reveal-extra" key={line}>
+                    {line}
+                  </div>
+                ))}
+                <div className="reveal-source">Source: {q.reveal.source}</div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -442,10 +556,11 @@ function Closing({
       <div className="quote-mark" aria-hidden="true">
         “
       </div>
-      <div className="kicker">THANK YOU</div>
-      <h1 className="headline" style={{ fontSize: "3.2em" }}>
-        The future doesn't need one generation to win. It needs both generations to become useful to each other.
+      <div className="kicker">THE CONVERSATION</div>
+      <h1 className="headline" style={{ fontSize: "3em" }}>
+        {CLOSING.title}
       </h1>
+      <p style={{ fontSize: "1.9em", fontWeight: 700, color: "#009C96", margin: "0.5em 0 0" }}>{CLOSING.ask}</p>
       <p className="hint">
         {people.length} people joined · {finished} answered every question.
       </p>

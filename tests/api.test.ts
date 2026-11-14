@@ -52,16 +52,12 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
   });
 
   it("validates registration", async () => {
-    expect((await call("register", { name: " ", phone: "9876543210", generation: "Gen Z", occupation: "x" })).status).toBe(400);
-    expect((await call("register", { name: "A", phone: "9876543210", generation: "Gen Q", occupation: "x" })).status).toBe(400);
-    expect((await call("register", { name: "A", phone: "9876543210", generation: "Gen Z", occupation: "" })).status).toBe(400);
-    expect((await call("register", { name: "A", generation: "Gen Z", occupation: "x" })).status).toBe(400);
-    // Only the plain generation name is accepted, never the label with years.
-    expect(
-      (await call("register", { name: "A", phone: "9876543210", generation: "Gen Z (1997–2012)", occupation: "x" }))
-        .status,
-    ).toBe(400);
-    expect((await call("register", { name: "A", phone: "12345", generation: "Gen Z", occupation: "x" })).status).toBe(400);
+    expect((await call("register", { name: " ", phone: "9876543210", occupation: "x" })).status).toBe(400);
+    expect((await call("register", { name: "A", phone: "9876543210", occupation: "" })).status).toBe(400);
+    expect((await call("register", { name: "A", occupation: "x" })).status).toBe(400);
+    expect((await call("register", { name: "A", phone: "12345", occupation: "x" })).status).toBe(400);
+    // Generation is a poll question now, not a registration field.
+    expect((await call("register", { name: "A", phone: "9876543210", occupation: "x" })).status).toBe(201);
   });
 
   it("protects results and reset with the host PIN", async () => {
@@ -74,23 +70,25 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
     const { body: p } = await call("register", {
       name: "Asha",
       phone: " +91 98765-43210 ",
-      generation: "Gen X",
       occupation: "Teacher",
     });
     expect(p.phone).toBe("+919876543210");
-    await call("answer", { id: p.id, questionId: "q1", option: 2 });
-    const again = await call("answer", { id: p.id, questionId: "q1", option: 0 });
-    expect(again.body.answers.q1.option).toBe(2);
-    expect((await call("answer", { id: p.id, questionId: "q1", option: 9 })).status).toBe(400);
+    expect(p.generation).toBeUndefined();
+    await call("answer", { id: p.id, questionId: "q01", option: 2 });
+    const again = await call("answer", { id: p.id, questionId: "q01", option: 0 });
+    expect(again.body.answers.q01.option).toBe(2);
+    // Option range follows the question: q03 has 7 options, q04 has 4.
+    expect((await call("answer", { id: p.id, questionId: "q03", option: 6 })).status).toBe(200);
+    expect((await call("answer", { id: p.id, questionId: "q04", option: 4 })).status).toBe(400);
+    expect((await call("answer", { id: p.id, questionId: "q01", option: 9 })).status).toBe(400);
     expect((await call("answer", { id: p.id, questionId: "nope", option: 1 })).status).toBe(400);
-    expect((await call(`me?id=${p.id}`)).body.answers.q1.option).toBe(2);
+    expect((await call(`me?id=${p.id}`)).body.answers.q01.option).toBe(2);
     expect((await call("me?id=P-0000000000")).status).toBe(404);
     await call("reset", {}, "1234");
   });
 
   it("stores every answer from 200 phones, 50 submitting at the same moment", async () => {
-    const gens = ["Gen Z", "Gen Z", "Millennials", "Gen X", "Baby Boomers"];
-    const expected = Object.fromEntries(QUESTIONS.map((q) => [q.id, [0, 0, 0, 0]]));
+    const expected = Object.fromEntries(QUESTIONS.map((q) => [q.id, Array<number>(q.options.length).fill(0)]));
     // 50 requests in flight at any moment: the local Blobs test server refuses
     // connections if all 200 sockets open in the same millisecond.
     let next = 0;
@@ -101,13 +99,12 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
         const r = await call("register", {
           name: `Person ${i}`,
           phone: `98765${String(10000 + i)}`,
-          generation: gens[i % 5],
           occupation: "Student",
         });
         expect(r.status).toBe(201);
         const stopAfter = i % 10 === 0 ? 3 : QUESTIONS.length; // some people drop out early
         for (const q of QUESTIONS.slice(0, stopAfter)) {
-          const option = (i * 7 + q.id.charCodeAt(1)) % 4;
+          const option = (i * 7 + q.id.charCodeAt(2)) % q.options.length;
           expect((await call("answer", { id: r.body.id, questionId: q.id, option })).status).toBe(200);
           expected[q.id][option]++;
         }
@@ -117,9 +114,9 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
     const res = await call("results", undefined, "1234");
     const people = res.body.participants as Participant[];
     expect(people).toHaveLength(200);
-    for (const q of QUESTIONS) expect(overall(people, q.id).counts).toEqual(expected[q.id]);
-    expect(overall(people, "q1").total).toBe(200);
-    expect(overall(people, "q7").total).toBe(180);
+    for (const q of QUESTIONS) expect(overall(people, q).counts).toEqual(expected[q.id]);
+    expect(overall(people, QUESTIONS[0]).total).toBe(200);
+    expect(overall(people, QUESTIONS.at(-1)!).total).toBe(180);
 
     expect((await call("reset", {}, "1234")).body.deleted).toBe(200);
     expect((await call("results", undefined, "1234")).body.participants).toHaveLength(0);

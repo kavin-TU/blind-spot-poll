@@ -496,3 +496,110 @@ body {
     transition: none;
   }
 }
+
+/* ---------- Deck revamp: more options, breakdown switch, reveals ---------- */
+.options.many {
+  font-size: 0.8em;
+  gap: 0.8em;
+}
+.options.many .option {
+  padding: 0.9em 1.2em;
+}
+.results.dense {
+  font-size: 0.82em;
+  row-gap: 0.4em;
+}
+.results.overall-only {
+  grid-template-columns: minmax(0, 1fr) 0.5fr;
+}
+.results.overall-only .big {
+  font-size: 2.2em;
+}
+.row-sub {
+  margin-left: 0.6em;
+  font-size: 0.7em;
+  font-weight: 600;
+  color: var(--muted);
+}
+.row-main.correct .badge {
+  box-shadow: 0 0 0 0.18em var(--bg), 0 0 0 0.36em #f6be30;
+}
+.tag.gold {
+  background: #f6be30;
+}
+.tag:not(.gold) {
+  background: var(--line);
+  color: var(--fg);
+}
+.cell > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+.cell > span small {
+  font-size: 0.42em;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 0.35em;
+}
+.reveal {
+  display: flex;
+  align-items: center;
+  gap: 1.2em;
+  margin-top: 0.8em;
+  padding: 0.7em 1.1em;
+  border-radius: 0.8em;
+  background: var(--card);
+  border: 0.08em solid var(--line);
+  border-left: 0.35em solid #f6be30;
+}
+.reveal-stat {
+  font-size: 3em;
+  font-weight: 900;
+  line-height: 1;
+  color: #f6be30;
+  letter-spacing: -0.02em;
+}
+.reveal-text {
+  min-width: 0;
+}
+.reveal-caption {
+  font-size: 1.25em;
+  font-weight: 700;
+}
+.reveal-extra {
+  font-size: 1em;
+  color: var(--fg);
+  opacity: 0.85;
+}
+.reveal-source {
+  font-size: 0.8em;
+  color: var(--muted);
+  margin-top: 0.2em;
+}
+.seg .seg-label {
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding: 0 0.3em 0 0.6em;
+}
+.seg .btn.on {
+  background: var(--fg);
+  color: var(--bg);
+}
+.bar {
+  font-size: 0.85em;
+  flex-wrap: nowrap;
+}
+.bar .btn,
+.bar .count,
+.bar .mark,
+.seg .seg-label {
+  white-space: nowrap;
+}
+.bar .count {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

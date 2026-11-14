@@ -1,4 +1,4 @@
-import type { Generation, Participant } from "./questions";
+import type { Participant } from "./questions";
 
 // Retries are only used for calls that are safe to repeat (an answer is kept
 // the first time it lands, so sending it again changes nothing).
@@ -42,8 +42,8 @@ const post = (body: unknown, headers: Record<string, string> = {}): RequestInit 
 });
 
 export const api = {
-  register: (name: string, phone: string, generation: Generation, occupation: string) =>
-    call<Participant>("register", post({ name, phone, generation, occupation })),
+  register: (name: string, phone: string, occupation: string) =>
+    call<Participant>("register", post({ name, phone, occupation })),
   me: (id: string) => retrying<Participant>(`me?id=${encodeURIComponent(id)}`),
   answer: (id: string, questionId: string, option: number) =>
     retrying<Participant>("answer", post({ id, questionId, option })),

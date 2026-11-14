@@ -1,16 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, ApiError } from "../api";
-import { CheckRing, CornerBlocks, DotGrid, IconBriefcase, IconCheck, IconPeople, IconPhone, IconUser, TwoSides } from "../art";
-import {
-  GENERATIONS,
-  GENERATION_YEARS,
-  LETTERS,
-  OPTION_COLORS,
-  QUESTIONS,
-  normalizePhone,
-  type Generation,
-  type Participant,
-} from "../questions";
+import { CheckRing, CornerBlocks, DotGrid, IconBriefcase, IconCheck, IconPhone, IconUser, TwoSides } from "../art";
+import { CLOSING, COVER, LETTERS, OPTION_COLORS, QUESTIONS, kickerOf, normalizePhone, type Participant } from "../questions";
 
 const ID_KEY = "blind-spot-participant";
 
@@ -141,7 +132,6 @@ function Field({
 
 function Register({ onDone }: { onDone: (p: Participant) => void }) {
   const [name, setName] = useState("");
-  const [generation, setGeneration] = useState("");
   const [phone, setPhone] = useState("");
   const [occupation, setOccupation] = useState("");
   const [busy, setBusy] = useState(false);
@@ -151,12 +141,11 @@ function Register({ onDone }: { onDone: (p: Participant) => void }) {
     e.preventDefault();
     if (!name.trim()) return setError("Please enter your name.");
     if (!normalizePhone(phone)) return setError("Please enter a valid phone number.");
-    if (!generation) return setError("Please choose your generation.");
     if (!occupation.trim()) return setError("Please enter your occupation.");
     setBusy(true);
     setError("");
     try {
-      onDone(await api.register(name, phone, generation as Generation, occupation));
+      onDone(await api.register(name, phone, occupation));
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
@@ -172,9 +161,7 @@ function Register({ onDone }: { onDone: (p: Participant) => void }) {
         <br />
         BLIND SPOT
       </h1>
-      <p className="mt-3 mb-6 max-w-[15rem] text-lg leading-snug font-semibold text-teal">
-        What's working that nobody's borrowed?
-      </p>
+      <p className="mt-3 mb-6 max-w-[15rem] text-lg leading-snug font-semibold text-teal">{COVER.tagline}</p>
       <form
         onSubmit={submit}
         className="space-y-4 rounded-2xl bg-cream p-5 text-navy shadow-[6px_6px_0_0_#EE634C]"
@@ -202,18 +189,6 @@ function Register({ onDone }: { onDone: (p: Participant) => void }) {
             placeholder="e.g. 98765 43210"
           />
         </Field>
-        <Field label="Generation" icon={<IconPeople />} hint="Years are birth years. Pick the range yours falls in.">
-          <select className={`${field} pr-7! text-[15px]!`} value={generation} onChange={(e) => setGeneration(e.target.value)}>
-            <option value="" disabled>
-              Select…
-            </option>
-            {GENERATIONS.map((g) => (
-              <option key={g} value={g}>
-                {GENERATION_YEARS[g] ? `${g} (${GENERATION_YEARS[g]})` : g}
-              </option>
-            ))}
-          </select>
-        </Field>
         <Field label="Occupation" icon={<IconBriefcase />}>
           <input
             className={field}
@@ -236,7 +211,9 @@ function Register({ onDone }: { onDone: (p: Participant) => void }) {
           {busy ? "Joining…" : "Join"}
         </button>
       </form>
-      <p className="mt-6 text-center text-sm text-cream/60">{QUESTIONS.length} quick questions. No account needed.</p>
+      <p className="mt-6 text-center text-sm text-cream/60">
+        {QUESTIONS.length} quick questions. {COVER.sub} No account needed.
+      </p>
     </div>
   );
 }
@@ -277,7 +254,7 @@ function QuestionCard({
   return (
     <div className="fade-up flex flex-1 flex-col">
       <DotGrid className="pointer-events-none absolute top-14 -right-8 -z-10 w-32 text-cream/[0.07]" />
-      <div className="mt-1 mb-5 flex items-center gap-1.5" aria-label={`Question ${index + 1} of ${QUESTIONS.length}`}>
+      <div className="mt-1 mb-5 flex items-center gap-1" aria-label={`Question ${index + 1} of ${QUESTIONS.length}`}>
         {QUESTIONS.map((x, i) => (
           <div
             key={x.id}
@@ -291,7 +268,7 @@ function QuestionCard({
         <span className="ml-1.5 text-xs font-bold text-cream/55 tabular-nums">/ {QUESTIONS.length}</span>
       </div>
       <p className="self-start rounded-full bg-gold/15 px-3 py-1 text-[10px] font-bold tracking-[0.18em] text-gold">
-        {q.kicker}
+        {kickerOf(q)}
       </p>
       <h1 className="mt-3 text-[26px] leading-tight font-extrabold">{q.title}</h1>
       <p className="mt-2 text-base text-cream/75">{q.hint}</p>
@@ -366,7 +343,7 @@ function Done({ name }: { name: string }) {
         All {QUESTIONS.length} answers are in. Look up — the results will be discussed on the big screen.
       </p>
       <p className="fade-up mt-10 rounded-2xl border border-cream/10 bg-white/[0.05] p-4 pl-5 text-left text-base text-cream/85 italic shadow-[-4px_0_0_0_#F6BE30]">
-        “A generation gap is not a verdict. It is a two-way learning opportunity.”
+        “{CLOSING.title}”
       </p>
     </Centered>
   );
