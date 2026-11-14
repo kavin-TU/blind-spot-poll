@@ -12,5 +12,5 @@
     "allowImportingTsExtensions": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "netlify", "tests", "vite.config.ts"]
+  "include": ["src", "netlify", "tests", "server", "vite.config.ts"]
 }

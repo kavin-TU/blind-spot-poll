@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "node server/main.ts"
   },
   "dependencies": {
     "@netlify/blobs": "^11.1.9",

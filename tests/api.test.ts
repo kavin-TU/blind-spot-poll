@@ -1,4 +1,5 @@
-// Runs the real API handler against a real local Blobs server and simulates a
+// Runs the real API handler against both storage backends (a real local
+// Netlify Blobs server, and the file store used in Docker) and simulates a
 // full room of phones answering at once.
 import { BlobsServer } from "@netlify/blobs/server";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -7,7 +8,12 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { overall } from "../src/analytics";
 import { QUESTIONS, type Participant } from "../src/questions";
-import handler from "../netlify/functions/api.mts";
+import netlifyHandler from "../netlify/functions/api.mts";
+import { fileStore } from "../server/file-store.ts";
+import { createHandler } from "../server/handler.ts";
+
+let handler: (req: Request) => Promise<Response>;
+let fileHandler: typeof handler;
 
 let server: BlobsServer;
 let dir: string;
@@ -21,6 +27,7 @@ beforeAll(async () => {
     JSON.stringify({ edgeURL: url, uncachedEdgeURL: url, siteID: "test-site", token: "t" }),
   ).toString("base64");
   process.env.HOST_PIN = "1234";
+  fileHandler = createHandler(fileStore(join(dir, "files")), () => "1234");
 });
 
 afterAll(async () => {
@@ -39,7 +46,11 @@ const call = async (path: string, body?: unknown, pin?: string) => {
   return { status: res.status, body: await res.json() };
 };
 
-describe("api", () => {
+describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
+  beforeAll(() => {
+    handler = backend === "file store" ? fileHandler : netlifyHandler;
+  });
+
   it("validates registration", async () => {
     expect((await call("register", { name: " ", generation: "Gen Z", occupation: "x" })).status).toBe(400);
     expect((await call("register", { name: "A", generation: "Gen Q", occupation: "x" })).status).toBe(400);
