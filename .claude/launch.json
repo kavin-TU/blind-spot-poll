@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "blind-spot",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["HOST_PIN=1234", "npx", "vite", "--port", "5173", "--strictPort"],
+      "port": 5173
+    }
+  ]
+}

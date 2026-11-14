@@ -1,0 +1,344 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0f233f;
+  --color-cream: #faf6eb;
+  --color-coral: #ee634c;
+  --color-teal: #009c96;
+  --color-gold: #f6be30;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  background: #0f233f;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Instructor slides: everything is sized in em off the stage, so
+   the slide scales as one piece to any projector resolution. ---------- */
+.stage {
+  position: fixed;
+  inset: 0;
+  font-size: min(1.3vw, 2.3vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  --bg: #0f233f;
+  --fg: #faf6eb;
+  --muted: rgba(250, 246, 235, 0.68);
+  --card: rgba(250, 246, 235, 0.07);
+  --line: rgba(250, 246, 235, 0.16);
+  --accent: #f6be30;
+  background: var(--bg);
+  color: var(--fg);
+}
+.stage.light {
+  --bg: #faf6eb;
+  --fg: #0f233f;
+  --muted: #5d6570;
+  --card: #ffffff;
+  --line: #e2dccd;
+  --accent: #009c96;
+}
+.slide {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 2.6em 4em 1.2em;
+}
+.kicker {
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+}
+.headline {
+  font-size: 2.7em;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin: 0.25em 0 0;
+  max-width: 24em;
+}
+.hint {
+  font-size: 1.3em;
+  color: var(--muted);
+  margin: 0.5em 0 0;
+}
+.badge {
+  width: 2.1em;
+  height: 2.1em;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.45em;
+  font-weight: 900;
+  color: #0f233f;
+}
+
+/* options before reveal */
+.options {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1em;
+  margin-top: 1.6em;
+  align-content: center;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  background: var(--card);
+  border: 0.1em solid var(--line);
+  border-radius: 0.9em;
+  padding: 1.3em 1.5em;
+}
+.option .badge {
+  font-size: 1.5em;
+}
+.option-title {
+  font-size: 1.7em;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.option-sub {
+  font-size: 1.05em;
+  color: var(--muted);
+  margin-top: 0.25em;
+}
+
+/* results after reveal */
+.results {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 2.5fr) 0.75fr repeat(5, minmax(0, 0.72fr));
+  grid-template-rows: auto repeat(4, minmax(0, 1fr));
+  column-gap: 0.7em;
+  row-gap: 0.6em;
+  margin-top: 1.1em;
+  align-items: stretch;
+}
+.results .th {
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--muted);
+  align-self: end;
+  line-height: 1.25;
+}
+.results .th small {
+  display: block;
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  text-transform: none;
+  opacity: 0.85;
+}
+.row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+  min-width: 0;
+}
+.row-main .badge {
+  font-size: 1.35em;
+}
+.row-title {
+  font-size: 1.35em;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.track {
+  height: 0.7em;
+  border-radius: 0.35em;
+  background: var(--line);
+  margin-top: 0.45em;
+  overflow: hidden;
+}
+.track > div {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.big {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5em;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.big small {
+  font-size: 0.3em;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 0.5em;
+}
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6em;
+  background: var(--card);
+  border: 0.08em solid var(--line);
+  overflow: hidden;
+  font-size: 1.55em;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cell > i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.38;
+  transition: height 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.cell > span {
+  position: relative;
+}
+.cell.na {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--muted);
+  border-style: dashed;
+  background: transparent;
+}
+.quote {
+  font-size: 1.05em;
+  font-style: italic;
+  color: var(--muted);
+  border-left: 0.25em solid var(--accent);
+  padding-left: 0.8em;
+  margin-top: 0.9em;
+}
+
+/* control strip */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.7em 4em 0.9em;
+  font-size: 0.95em;
+}
+.bar .mark {
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  font-size: 0.8em;
+  color: var(--muted);
+}
+.bar .count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.btn {
+  font: inherit;
+  font-weight: 700;
+  padding: 0.6em 1.2em;
+  border-radius: 0.6em;
+  border: 0.1em solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--fg);
+}
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.btn.primary {
+  background: #ee634c;
+  border-color: #ee634c;
+  color: #fff;
+}
+.btn.primary:hover:not(:disabled) {
+  background: #d9523c;
+  border-color: #d9523c;
+}
+.btn:focus-visible {
+  outline: 0.15em solid #f6be30;
+  outline-offset: 0.15em;
+}
+.stripe {
+  display: flex;
+  height: 0.5em;
+  flex: none;
+}
+.stripe > div {
+  flex: 1;
+}
+.warn {
+  color: #ee634c;
+  font-weight: 700;
+}
+
+/* welcome */
+.welcome {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 2em;
+  align-items: center;
+  padding: 2.6em 4em 1em;
+}
+.title-xl {
+  font-size: 5.6em;
+  font-weight: 900;
+  line-height: 0.95;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+  margin: 0.2em 0 0;
+}
+.qr-card {
+  background: #faf6eb;
+  color: #0f233f;
+  border-radius: 1.4em;
+  padding: 1.6em;
+  text-align: center;
+  justify-self: center;
+  box-shadow: 0.7em 0.7em 0 #ee634c;
+}
+.qr-card svg {
+  width: 17em;
+  height: 17em;
+  display: block;
+}
+.stat {
+  font-size: 3em;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 0.9em;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 0.4em;
+}
+.pin {
+  font: inherit;
+  font-size: 1.4em;
+  padding: 0.6em 0.9em;
+  border-radius: 0.5em;
+  border: 0.1em solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  width: 12em;
+}
