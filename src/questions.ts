@@ -130,6 +130,14 @@ export const QUESTIONS: Question[] = [
   },
 ];
 
+/** Tidies a typed phone number; returns "" unless it has 7-15 digits. */
+export function normalizePhone(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 7 || digits.length > 15) return "";
+  return (raw.trim().startsWith("+") ? "+" : "") + digits;
+}
+
 export interface Answer {
   option: number; // 0-3
   at: string; // server ISO timestamp
@@ -138,6 +146,7 @@ export interface Answer {
 export interface Participant {
   id: string;
   name: string;
+  phone: string; // digits, with an optional leading +
   generation: Generation;
   occupation: string;
   joinedAt: string;

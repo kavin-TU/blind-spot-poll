@@ -42,8 +42,8 @@ const post = (body: unknown, headers: Record<string, string> = {}): RequestInit 
 });
 
 export const api = {
-  register: (name: string, generation: Generation, occupation: string) =>
-    call<Participant>("register", post({ name, generation, occupation })),
+  register: (name: string, phone: string, generation: Generation, occupation: string) =>
+    call<Participant>("register", post({ name, phone, generation, occupation })),
   me: (id: string) => retrying<Participant>(`me?id=${encodeURIComponent(id)}`),
   answer: (id: string, questionId: string, option: number) =>
     retrying<Participant>("answer", post({ id, questionId, option })),

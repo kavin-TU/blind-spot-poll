@@ -29,18 +29,20 @@ export async function downloadExcel(people: Participant[]) {
   const p1 = sheet("Participant Details", [
     { header: "Participant ID", width: 16 },
     { header: "Name", width: 28 },
+    { header: "Phone", width: 18 },
     { header: "Generation", width: 26 },
     { header: "Occupation", width: 28 },
     { header: "Joined At", width: 22 },
     { header: "Questions Answered", width: 20 },
   ]);
   for (const p of people)
-    p1.addRow([p.id, p.name, p.generation, p.occupation, new Date(p.joinedAt), Object.keys(p.answers).length]);
-  p1.getColumn(5).numFmt = "yyyy-mm-dd hh:mm:ss";
+    p1.addRow([p.id, p.name, p.phone ?? "", p.generation, p.occupation, new Date(p.joinedAt), Object.keys(p.answers).length]);
+  p1.getColumn(6).numFmt = "yyyy-mm-dd hh:mm:ss";
 
   const p2 = sheet("Individual Responses", [
     { header: "Participant ID", width: 16 },
     { header: "Name", width: 28 },
+    { header: "Phone", width: 18 },
     { header: "Generation", width: 26 },
     { header: "Occupation", width: 28 },
     { header: "Question", width: 60 },
@@ -54,6 +56,7 @@ export async function downloadExcel(people: Participant[]) {
       p2.addRow([
         p.id,
         p.name,
+        p.phone ?? "",
         p.generation,
         p.occupation,
         `Q${i + 1}. ${q.title}`,
@@ -61,7 +64,7 @@ export async function downloadExcel(people: Participant[]) {
         new Date(a.at),
       ]);
     }
-  p2.getColumn(7).numFmt = "yyyy-mm-dd hh:mm:ss";
+  p2.getColumn(8).numFmt = "yyyy-mm-dd hh:mm:ss";
 
   const p3 = sheet("Overall Results", [
     { header: "Question", width: 60 },

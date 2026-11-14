@@ -1,4 +1,4 @@
-import { GENERATIONS, QUESTIONS, type Generation, type Participant } from "../src/questions.ts";
+import { GENERATIONS, QUESTIONS, normalizePhone, type Generation, type Participant } from "../src/questions.ts";
 
 // Where participant records live. One JSON record per participant, keyed
 // "p/<id>". A phone only ever writes its own record, so simultaneous
@@ -49,15 +49,18 @@ export function createHandler(store: Store, hostPin: () => string | undefined) {
     if (route === "register" && method === "POST") {
       const body = await req.json().catch(() => ({}));
       const name = clean(body.name, 60);
+      const phone = normalizePhone(body.phone);
       const occupation = clean(body.occupation, 60);
       const generation = body.generation as Generation;
       if (!name) return fail(400, "Please enter your name.");
+      if (!phone) return fail(400, "Please enter a valid phone number.");
       if (!GENERATIONS.includes(generation)) return fail(400, "Please choose your generation.");
       if (!occupation) return fail(400, "Please enter your occupation.");
 
       const p: Participant = {
         id: `P-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`,
         name,
+        phone,
         generation,
         occupation,
         joinedAt: new Date().toISOString(),

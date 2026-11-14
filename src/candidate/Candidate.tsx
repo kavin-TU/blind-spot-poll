@@ -1,6 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, ApiError } from "../api";
-import { GENERATIONS, LETTERS, OPTION_COLORS, QUESTIONS, type Generation, type Participant } from "../questions";
+import {
+  GENERATIONS,
+  LETTERS,
+  OPTION_COLORS,
+  QUESTIONS,
+  normalizePhone,
+  type Generation,
+  type Participant,
+} from "../questions";
 
 const ID_KEY = "blind-spot-participant";
 
@@ -102,6 +110,7 @@ const field =
 function Register({ onDone }: { onDone: (p: Participant) => void }) {
   const [name, setName] = useState("");
   const [generation, setGeneration] = useState("");
+  const [phone, setPhone] = useState("");
   const [occupation, setOccupation] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -109,12 +118,13 @@ function Register({ onDone }: { onDone: (p: Participant) => void }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return setError("Please enter your name.");
+    if (!normalizePhone(phone)) return setError("Please enter a valid phone number.");
     if (!generation) return setError("Please choose your generation.");
     if (!occupation.trim()) return setError("Please enter your occupation.");
     setBusy(true);
     setError("");
     try {
-      onDone(await api.register(name, generation as Generation, occupation));
+      onDone(await api.register(name, phone, generation as Generation, occupation));
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
@@ -139,6 +149,19 @@ function Register({ onDone }: { onDone: (p: Participant) => void }) {
             maxLength={60}
             autoComplete="name"
             placeholder="e.g. Priya S"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-bold">Phone number</span>
+          <input
+            className={field}
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            maxLength={20}
+            autoComplete="tel"
+            placeholder="e.g. 98765 43210"
           />
         </label>
         <label className="block">

@@ -5,6 +5,7 @@ import { GENERATIONS, type Generation, type Participant } from "./questions";
 const person = (generation: Generation, occupation: string, option?: number): Participant => ({
   id: Math.random().toString(36),
   name: "x",
+  phone: "9876543210",
   generation,
   occupation,
   joinedAt: "",

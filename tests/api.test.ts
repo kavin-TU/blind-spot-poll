@@ -52,9 +52,11 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
   });
 
   it("validates registration", async () => {
-    expect((await call("register", { name: " ", generation: "Gen Z", occupation: "x" })).status).toBe(400);
-    expect((await call("register", { name: "A", generation: "Gen Q", occupation: "x" })).status).toBe(400);
-    expect((await call("register", { name: "A", generation: "Gen Z", occupation: "" })).status).toBe(400);
+    expect((await call("register", { name: " ", phone: "9876543210", generation: "Gen Z", occupation: "x" })).status).toBe(400);
+    expect((await call("register", { name: "A", phone: "9876543210", generation: "Gen Q", occupation: "x" })).status).toBe(400);
+    expect((await call("register", { name: "A", phone: "9876543210", generation: "Gen Z", occupation: "" })).status).toBe(400);
+    expect((await call("register", { name: "A", generation: "Gen Z", occupation: "x" })).status).toBe(400);
+    expect((await call("register", { name: "A", phone: "12345", generation: "Gen Z", occupation: "x" })).status).toBe(400);
   });
 
   it("protects results and reset with the host PIN", async () => {
@@ -64,7 +66,13 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
   });
 
   it("keeps the first answer and lets a phone resume", async () => {
-    const { body: p } = await call("register", { name: "Asha", generation: "Gen X", occupation: "Teacher" });
+    const { body: p } = await call("register", {
+      name: "Asha",
+      phone: " +91 98765-43210 ",
+      generation: "Gen X",
+      occupation: "Teacher",
+    });
+    expect(p.phone).toBe("+919876543210");
     await call("answer", { id: p.id, questionId: "q1", option: 2 });
     const again = await call("answer", { id: p.id, questionId: "q1", option: 0 });
     expect(again.body.answers.q1.option).toBe(2);
@@ -85,7 +93,12 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
       while (next < 200) await phone(next++);
     };
     const phone = async (i: number) => {
-        const r = await call("register", { name: `Person ${i}`, generation: gens[i % 5], occupation: "Student" });
+        const r = await call("register", {
+          name: `Person ${i}`,
+          phone: `98765${String(10000 + i)}`,
+          generation: gens[i % 5],
+          occupation: "Student",
+        });
         expect(r.status).toBe(201);
         const stopAfter = i % 10 === 0 ? 3 : QUESTIONS.length; // some people drop out early
         for (const q of QUESTIONS.slice(0, stopAfter)) {
