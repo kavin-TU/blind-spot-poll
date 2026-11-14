@@ -3,6 +3,7 @@ import { api, ApiError } from "../api";
 import { CheckRing, CornerBlocks, DotGrid, IconBriefcase, IconCheck, IconPeople, IconPhone, IconUser, TwoSides } from "../art";
 import {
   GENERATIONS,
+  GENERATION_YEARS,
   LETTERS,
   OPTION_COLORS,
   QUESTIONS,
@@ -113,7 +114,17 @@ const field =
   "w-full rounded-xl border-2 border-navy/10 bg-white py-3.5 pr-4 pl-11 text-[17px] text-navy outline-none transition-shadow placeholder:text-navy/35 focus:border-teal focus:ring-4 focus:ring-teal/15";
 
 /** A labelled form field with a small icon inside the input's left edge. */
-function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Field({
+  label,
+  icon,
+  hint,
+  children,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-bold">{label}</span>
@@ -123,6 +134,7 @@ function Field({ label, icon, children }: { label: string; icon: React.ReactNode
         </span>
         {children}
       </span>
+      {hint && <span className="mt-1.5 block text-xs text-navy/55">{hint}</span>}
     </label>
   );
 }
@@ -190,13 +202,15 @@ function Register({ onDone }: { onDone: (p: Participant) => void }) {
             placeholder="e.g. 98765 43210"
           />
         </Field>
-        <Field label="Generation" icon={<IconPeople />}>
-          <select className={field} value={generation} onChange={(e) => setGeneration(e.target.value)}>
+        <Field label="Generation" icon={<IconPeople />} hint="Years are birth years. Pick the range yours falls in.">
+          <select className={`${field} pr-7! text-[15px]!`} value={generation} onChange={(e) => setGeneration(e.target.value)}>
             <option value="" disabled>
               Select…
             </option>
             {GENERATIONS.map((g) => (
-              <option key={g}>{g}</option>
+              <option key={g} value={g}>
+                {GENERATION_YEARS[g] ? `${g} (${GENERATION_YEARS[g]})` : g}
+              </option>
             ))}
           </select>
         </Field>

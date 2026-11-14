@@ -18,6 +18,16 @@ export const GENERATION_SHORT: Record<Generation, string> = {
   "Other / Prefer not to say": "Other",
 };
 
+// Birth-year ranges shown beside each generation (Pew Research definitions).
+// Display only: the stored value is always the plain name from GENERATIONS.
+export const GENERATION_YEARS: Record<Generation, string> = {
+  "Gen Z": "1997–2012",
+  Millennials: "1981–1996",
+  "Gen X": "1965–1980",
+  "Baby Boomers": "1946–1964",
+  "Other / Prefer not to say": "",
+};
+
 export const LETTERS = ["A", "B", "C", "D"] as const;
 export const OPTION_COLORS = ["#009C96", "#F6BE30", "#EE634C", "#3770A6"] as const;
 

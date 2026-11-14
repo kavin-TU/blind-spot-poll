@@ -56,6 +56,11 @@ describe.each(["Netlify Blobs", "file store"])("api on %s", (backend) => {
     expect((await call("register", { name: "A", phone: "9876543210", generation: "Gen Q", occupation: "x" })).status).toBe(400);
     expect((await call("register", { name: "A", phone: "9876543210", generation: "Gen Z", occupation: "" })).status).toBe(400);
     expect((await call("register", { name: "A", generation: "Gen Z", occupation: "x" })).status).toBe(400);
+    // Only the plain generation name is accepted, never the label with years.
+    expect(
+      (await call("register", { name: "A", phone: "9876543210", generation: "Gen Z (1997–2012)", occupation: "x" }))
+        .status,
+    ).toBe(400);
     expect((await call("register", { name: "A", phone: "12345", generation: "Gen Z", occupation: "x" })).status).toBe(400);
   });
 

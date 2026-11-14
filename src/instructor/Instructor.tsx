@@ -18,6 +18,7 @@ import {
 import {
   GENERATIONS,
   GENERATION_SHORT,
+  GENERATION_YEARS,
   LETTERS,
   OPTION_COLORS,
   QUESTIONS,
@@ -328,11 +329,13 @@ function QuestionSlide({
               {q.hint}
             </div>
             <div className="th">
-              Overall<small>{all.total} answers</small>
+              Overall<small>&nbsp;</small>
+              <small>{all.total} answers</small>
             </div>
             {GENERATIONS.map((g) => (
               <div className="th" key={g}>
                 {GENERATION_SHORT[g]}
+                <small>{GENERATION_YEARS[g] || "\u00A0"}</small>
                 <small>{gens.get(g)!.total} answers</small>
               </div>
             ))}
