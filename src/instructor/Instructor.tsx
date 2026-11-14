@@ -3,6 +3,19 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNo
 import { byGroup, formatShare, overall, share } from "../analytics";
 import { api, ApiError } from "../api";
 import {
+  CornerBlocks,
+  DotGrid,
+  IconArrowLeft,
+  IconArrowRight,
+  IconChart,
+  IconDownload,
+  IconEyeOff,
+  IconFlag,
+  IconPeople,
+  IconTrash,
+  TwoSides,
+} from "../art";
+import {
   GENERATIONS,
   GENERATION_SHORT,
   LETTERS,
@@ -122,17 +135,26 @@ export default function Instructor() {
       )}
 
       <div className="bar">
-        <button className="btn" onClick={() => go(-1)} disabled={view.slide === 0}>
-          ← Back
-        </button>
-        {question && (
-          <button className={`btn ${revealed ? "" : "primary"}`} onClick={toggle}>
-            {revealed ? "Hide results" : "Show results"}
+        <div className="controls">
+          <button className="btn" onClick={() => go(-1)} disabled={view.slide === 0}>
+            <IconArrowLeft />
+            Back
           </button>
-        )}
-        <button className={`btn ${!question || revealed ? "primary" : ""}`} onClick={() => go(1)} disabled={view.slide === LAST}>
-          {view.slide === 0 ? "Start questions →" : view.slide === QUESTIONS.length ? "Finish →" : "Next question →"}
-        </button>
+          {question && (
+            <button className={`btn ${revealed ? "" : "primary"}`} onClick={toggle}>
+              {revealed ? <IconEyeOff /> : <IconChart />}
+              {revealed ? "Hide results" : "Show results"}
+            </button>
+          )}
+          <button
+            className={`btn ${!question || revealed ? "primary" : ""}`}
+            onClick={() => go(1)}
+            disabled={view.slide === LAST}
+          >
+            {view.slide === 0 ? "Start questions" : view.slide === QUESTIONS.length ? "Finish" : "Next question"}
+            <IconArrowRight />
+          </button>
+        </div>
         <span className="count" role="status">
           {error ? <span className="warn">Connection problem — showing last known data. </span> : null}
           {question
@@ -140,6 +162,7 @@ export default function Instructor() {
             : `${people.length} joined · ${finished} finished`}
         </span>
         <span style={{ flex: 1 }} />
+        <TwoSides style={{ height: "1.1em", width: "auto" }} />
         <span className="mark">THE BLIND SPOT</span>
       </div>
       <div className="stripe">
@@ -159,7 +182,10 @@ function PinGate({ onSubmit, error, checking }: { onSubmit: (pin: string) => voi
   };
   return (
     <div className="stage">
+      <CornerBlocks className="art" style={{ top: 0, right: 0, width: "24em" }} />
+      <DotGrid className="art" style={{ left: "3em", bottom: "3em", width: "9em", opacity: 0.12 }} />
       <form className="slide" style={{ justifyContent: "center", alignItems: "flex-start" }} onSubmit={submit}>
+        <TwoSides style={{ height: "2.6em", width: "auto", marginBottom: "1.2em" }} />
         <div className="kicker">INSTRUCTOR</div>
         <h1 className="headline">The Blind Spot</h1>
         <p className="hint">{checking ? "Checking…" : "Enter the host PIN to open the presenter view."}</p>
@@ -190,7 +216,8 @@ function Welcome({ joined, finished }: { joined: number; finished: number }) {
   const url = `${window.location.origin}/join`;
   return (
     <div className="welcome">
-      <div>
+      <CornerBlocks className="art" style={{ top: 0, right: 0, width: "17em" }} />
+      <div style={{ position: "relative" }}>
         <div className="kicker">THE NEXTGEN FORUM | 14 NOVEMBER 2026</div>
         <h1 className="title-xl">
           THE
@@ -203,22 +230,37 @@ function Welcome({ joined, finished }: { joined: number; finished: number }) {
         <p className="hint" style={{ maxWidth: "22em" }}>
           Scan the code, tell us your generation, and answer {QUESTIONS.length} quick questions on your phone.
         </p>
-        <div style={{ display: "flex", gap: "3em", marginTop: "2.2em" }}>
-          <div>
-            <div className="stat" style={{ color: "#F6BE30" }}>
-              {joined}
+        <div style={{ display: "flex", gap: "1em", marginTop: "2em" }}>
+          <div className="stat-tile">
+            <span className="ico" style={{ color: "#F6BE30" }}>
+              <IconPeople />
+            </span>
+            <div>
+              <div className="stat" style={{ color: "#F6BE30" }}>
+                <span className="bump" key={joined}>
+                  {joined}
+                </span>
+              </div>
+              <div className="stat-label">JOINED</div>
             </div>
-            <div className="stat-label">JOINED</div>
           </div>
-          <div>
-            <div className="stat" style={{ color: "#009C96" }}>
-              {finished}
+          <div className="stat-tile">
+            <span className="ico" style={{ color: "#009C96" }}>
+              <IconFlag />
+            </span>
+            <div>
+              <div className="stat" style={{ color: "#009C96" }}>
+                <span className="bump" key={finished}>
+                  {finished}
+                </span>
+              </div>
+              <div className="stat-label">FINISHED</div>
             </div>
-            <div className="stat-label">FINISHED</div>
           </div>
         </div>
       </div>
-      <div className="qr-card">
+      <DotGrid className="art" style={{ right: "6em", bottom: "4em", width: "11em", opacity: 0.14 }} />
+      <div className="qr-card" style={{ position: "relative" }}>
         <QRCodeSVG value={url} size={512} bgColor="#FAF6EB" fgColor="#0F233F" level="M" marginSize={0} />
         <div style={{ fontSize: "0.85em", fontWeight: 700, letterSpacing: "0.2em", marginTop: "1.2em", color: "#5D6570" }}>
           SCAN TO JOIN, OR OPEN
@@ -247,7 +289,10 @@ function QuestionSlide({
 
   return (
     <div className="slide">
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      {!revealed && (
+        <DotGrid className="art" style={{ right: "1.6em", bottom: "0.6em", width: "8em", color: "var(--accent)", opacity: 0.22 }} />
+      )}
+      <div style={{ display: "flex", justifyContent: "space-between", position: "relative" }}>
         <span className="kicker">{q.kicker}</span>
         <span style={{ fontWeight: 700, opacity: 0.7 }}>
           {String(number).padStart(2, "0")} / {String(QUESTIONS.length).padStart(2, "0")}
@@ -261,7 +306,7 @@ function QuestionSlide({
       {!revealed ? (
         <div className="options">
           {q.options.map((o, i) => (
-            <div className="option" key={i}>
+            <div className="option fade-up" key={i} style={{ ["--opt" as string]: OPTION_COLORS[i], animationDelay: `${i * 60}ms` }}>
               <span className="badge" style={{ background: OPTION_COLORS[i] }}>
                 {LETTERS[i]}
               </span>
@@ -293,6 +338,7 @@ function QuestionSlide({
             ))}
             {q.options.map((o, i) => {
               const s = share(all.counts[i], all.total);
+              const top = all.counts[i] === Math.max(...all.counts);
               return (
                 <Row key={i}>
                   <div className="row-main">
@@ -300,7 +346,10 @@ function QuestionSlide({
                       {LETTERS[i]}
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="row-title">{o.title}</div>
+                      <div className="row-title">
+                        {o.title}
+                        {top && <span className="tag">Top choice</span>}
+                      </div>
                       <div className="track">
                         <div style={{ width: `${(s ?? 0) * 100}%`, background: OPTION_COLORS[i] }} />
                       </div>
@@ -386,18 +435,24 @@ function Closing({
 
   return (
     <div className="slide" style={{ justifyContent: "center" }}>
+      <CornerBlocks className="art" style={{ top: "-2.6em", right: "-4em", width: "18em" }} />
+      <div className="quote-mark" aria-hidden="true">
+        “
+      </div>
       <div className="kicker">THANK YOU</div>
       <h1 className="headline" style={{ fontSize: "3.2em" }}>
-        “The future doesn't need one generation to win. It needs both generations to become useful to each other.”
+        The future doesn't need one generation to win. It needs both generations to become useful to each other.
       </h1>
       <p className="hint">
         {people.length} people joined · {finished} answered every question.
       </p>
       <div style={{ display: "flex", gap: "0.8em", marginTop: "2em", fontSize: "1.2em" }}>
         <button className="btn primary" onClick={download} disabled={!!busy}>
+          <IconDownload />
           {busy === "excel" ? "Building…" : "Download Excel"}
         </button>
         <button className="btn" onClick={reset} disabled={!!busy || people.length === 0}>
+          <IconTrash />
           {busy === "reset" ? "Deleting…" : "Reset data"}
         </button>
       </div>
